@@ -11,7 +11,7 @@
 
 Phase 1 requires proving that a native, cross-platform desktop window can embed a genuine Chromium browser engine surface **without using an iframe**.
 
-The engine setup was compiled and verified using Rust 1.98.0 and Tauri 2 with native WebView2 integration (`browser_app.exe`).
+The engine setup was compiled and verified using Rust 1.98.0 and Tauri 2 with native WebView2 integration (`halka_browser.exe`).
 
 ---
 

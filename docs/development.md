@@ -29,7 +29,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ```bash
 cargo build --manifest-path src-tauri/Cargo.toml
-./src-tauri/target/debug/browser_app.exe
+./src-tauri/target/debug/halka_browser.exe
 ```
 
 DevTools will open automatically in debug mode (`#[cfg(debug_assertions)]`).

@@ -1,6 +1,7 @@
-# Antigravity Desktop Chromium Browser
+# Halka Desktop Chromium Browser
 
 A modern, cross-platform desktop web browser shell built around a native Chromium engine runtime.
+Light. Fast. Yours.
 
 > **Absolute Architecture Rule:** External websites are rendered exclusively inside native browser engine surfaces (`WebView2` on Windows). Iframes are strictly **never** used for website display.
 
@@ -40,58 +41,59 @@ d:/web2/
 │   │       ├── bookmarks.rs
 │   │       ├── downloads.rs
 │   │       ├── history.rs
+│   │       ├── mod.rs
 │   │       ├── navigation.rs
 │   │       ├── settings.rs
 │   │       └── tab_manager.rs
 │   └── icons/
-└── ui/
-    ├── index.html
-    ├── newtab.html
-    ├── css/
-    │   └── style.css
-    └── js/
-        └── chrome.js
+├── ui/
+│   ├── assets/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── chrome.js
+│   ├── index.html
+│   └── newtab.html
+├── app-icon.svg
+└── README.md
 ```
 
 ---
 
-## Getting Started & Running the Project
+## Getting Started
 
 ### Prerequisites
-- **Rust & Cargo** (1.78+ recommended): [Install Rust](https://rustup.rs/)
-- **C++ Build Tools / CMake**: (On Windows: Visual Studio C++ Build Tools)
-- **WebView2 Runtime**: (Pre-installed on Windows 10/11)
+
+- **Rust toolchain** (1.78.0+): `rustc --version`, `cargo --version`
+- **Windows**: Microsoft Edge WebView2 Runtime (pre-installed on Windows 10/11)
 - *(Optional)* **Node.js**: If using Tauri CLI (`@tauri-apps/cli`)
 
 ---
 
-### Quick Start (Run Directly)
+### Building & Running
 
-#### Option 1: Cargo (Recommended)
-From the project root:
+#### Quick Launch with Cargo
 ```bash
-# Compiles and launches the browser in debug mode
+# From workspace root
 cargo run --manifest-path src-tauri/Cargo.toml
-```
 
-Or navigate to `src-tauri` first:
-```bash
+# Or navigate to `src-tauri` first:
 cd src-tauri
 cargo run
 ```
 
-#### Option 2: Tauri CLI
+#### Using Tauri CLI (Recommended for production packaging)
 ```bash
 # Using cargo-tauri
 cargo tauri dev
 
-# Or using npx
+# Or with npx
 npx @tauri-apps/cli dev
 ```
 
 ---
 
-### Building the Project
+### Build Commands
 
 #### Development (Debug) Build
 ```bash
@@ -103,13 +105,13 @@ cargo build --manifest-path src-tauri/Cargo.toml
 
 # 3. Launch compiled binary
 # On Windows (PowerShell):
-.\src-tauri\target\debug\browser_app.exe
+.\src-tauri\target\debug\halka_browser.exe
 
 # On Windows (Command Prompt):
-src-tauri\target\debug\browser_app.exe
+src-tauri\target\debug\halka_browser.exe
 
 # On Linux / macOS:
-./src-tauri/target/debug/browser_app
+./src-tauri/target/debug/halka_browser
 ```
 
 #### Production (Release) Build
@@ -119,10 +121,10 @@ cargo build --release --manifest-path src-tauri/Cargo.toml
 
 # Launch release binary:
 # Windows (PowerShell):
-.\src-tauri\target\release\browser_app.exe
+.\src-tauri\target\release\halka_browser.exe
 
 # Linux / macOS:
-./src-tauri/target/release/browser_app
+./src-tauri/target/release/halka_browser
 ```
 
 ---

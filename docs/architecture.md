@@ -1,8 +1,8 @@
-# System Architecture: Antigravity Desktop Web Browser
+# System Architecture: Halka Desktop Web Browser
 
 ## 1. Architectural Overview
 
-Antigravity Browser decouples the **Browser Chrome UI** from the **Web Content Rendering Surface**:
+Halka Browser decouples the **Browser Chrome UI** from the **Web Content Rendering Surface**:
 
 ```
 +-----------------------------------------------------------------------+

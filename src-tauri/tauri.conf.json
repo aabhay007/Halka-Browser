@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Antigravity Browser",
+  "productName": "Halka Browser",
   "version": "0.1.0",
-  "identifier": "com.antigravity.browser",
+  "identifier": "com.halka.browser",
   "build": {
     "frontendDist": "../ui"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Antigravity Browser",
+        "title": "Halka Browser",
         "width": 1280,
         "height": 800,
         "resizable": true,
