@@ -44,13 +44,13 @@ fn emit_tab_state(app: &AppHandle, state: &AppState) {
 // --- TAB COMMANDS ---
 
 #[tauri::command]
-fn get_tabs(state: State<'_, AppState>) -> Result<Vec<TabData>, String> {
+async fn get_tabs(state: State<'_, AppState>) -> Result<Vec<TabData>, String> {
     let mgr = state.tab_manager.lock().unwrap();
     Ok(mgr.get_tabs_list())
 }
 
 #[tauri::command]
-fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -> Result<TabData, String> {
+async fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -> Result<TabData, String> {
     let target_url = url.unwrap_or_else(|| "https://www.google.com".to_string());
     let parsed_url = NavigationManager::parse_input_to_url(&target_url);
 
@@ -75,7 +75,7 @@ fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -
     }
 
     let initial_url = WebviewUrl::External(parsed_url.parse().map_err(|e| format!("{}", e))?);
-    let webview_builder = WebviewBuilder::new(&tab_id, initial_url);
+    let webview_builder = WebviewBuilder::new(&tab_id, initial_url).auto_resize();
     let child_wv = main_window
         .add_child(webview_builder, pos, size)
         .map_err(|e| format!("{}", e))?;
@@ -91,7 +91,7 @@ fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -
 }
 
 #[tauri::command]
-fn switch_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Result<(), String> {
+async fn switch_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Result<(), String> {
     let main_window = app.get_window("main").ok_or("main window not found")?;
     let (pos, size) = get_active_content_bounds(&main_window);
 
@@ -127,7 +127,7 @@ fn switch_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Res
 }
 
 #[tauri::command]
-fn close_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Result<(), String> {
+async fn close_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Result<(), String> {
     if let Some(wv) = app.get_webview(&tab_id) {
         let _ = wv.close();
     }
@@ -138,9 +138,9 @@ fn close_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Resu
     };
 
     if let Some(active_id) = new_active_id {
-        let _ = switch_tab(app.clone(), state.clone(), active_id);
+        let _ = switch_tab(app.clone(), state.clone(), active_id).await;
     } else {
-        let _ = create_tab(app.clone(), state.clone(), Some("https://www.google.com".into()));
+        let _ = create_tab(app.clone(), state.clone(), Some("https://www.google.com".into())).await;
     }
 
     emit_tab_state(&app, &state);
@@ -148,20 +148,20 @@ fn close_tab(app: AppHandle, state: State<'_, AppState>, tab_id: String) -> Resu
 }
 
 #[tauri::command]
-fn reopen_tab(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+async fn reopen_tab(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     let closed_url = {
         let mut mgr = state.tab_manager.lock().unwrap();
         mgr.pop_closed_url()
     };
 
     if let Some(url) = closed_url {
-        let _ = create_tab(app, state, Some(url));
+        let _ = create_tab(app, state, Some(url)).await;
     }
     Ok(())
 }
 
 #[tauri::command]
-fn navigate(app: AppHandle, state: State<'_, AppState>, input: String) {
+async fn navigate(app: AppHandle, state: State<'_, AppState>, input: String) -> Result<(), String> {
     let active_id = {
         let mgr = state.tab_manager.lock().unwrap();
         mgr.active_tab_id()
@@ -182,97 +182,102 @@ fn navigate(app: AppHandle, state: State<'_, AppState>, input: String) {
             }
         }
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn go_back(app: AppHandle, state: State<'_, AppState>) {
+async fn go_back(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if let Some(tab_id) = state.tab_manager.lock().unwrap().active_tab_id() {
         if let Some(content_wv) = app.get_webview(&tab_id) {
             let _ = content_wv.eval("window.history.back()");
         }
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn go_forward(app: AppHandle, state: State<'_, AppState>) {
+async fn go_forward(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if let Some(tab_id) = state.tab_manager.lock().unwrap().active_tab_id() {
         if let Some(content_wv) = app.get_webview(&tab_id) {
             let _ = content_wv.eval("window.history.forward()");
         }
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn reload(app: AppHandle, state: State<'_, AppState>) {
+async fn reload(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if let Some(tab_id) = state.tab_manager.lock().unwrap().active_tab_id() {
         if let Some(content_wv) = app.get_webview(&tab_id) {
             let _ = content_wv.reload();
         }
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn open_devtools(app: AppHandle, state: State<'_, AppState>) {
+async fn open_devtools(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if let Some(tab_id) = state.tab_manager.lock().unwrap().active_tab_id() {
         if let Some(content_wv) = app.get_webview(&tab_id) {
             content_wv.open_devtools();
         }
     }
+    Ok(())
 }
 
 // --- HISTORY IPC COMMANDS ---
 
 #[tauri::command]
-fn get_history(state: State<'_, AppState>, limit: Option<usize>) -> Result<Vec<HistoryEntry>, String> {
+async fn get_history(state: State<'_, AppState>, limit: Option<usize>) -> Result<Vec<HistoryEntry>, String> {
     HistoryManager::get_history(&state.db, limit.unwrap_or(100))
 }
 
 #[tauri::command]
-fn delete_history_entry(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+async fn delete_history_entry(state: State<'_, AppState>, id: i64) -> Result<(), String> {
     HistoryManager::delete_entry(&state.db, id)
 }
 
 #[tauri::command]
-fn clear_history(state: State<'_, AppState>) -> Result<(), String> {
+async fn clear_history(state: State<'_, AppState>) -> Result<(), String> {
     HistoryManager::clear_history(&state.db)
 }
 
 // --- BOOKMARK IPC COMMANDS ---
 
 #[tauri::command]
-fn add_bookmark(state: State<'_, AppState>, url: String, title: String) -> Result<BookmarkEntry, String> {
+async fn add_bookmark(state: State<'_, AppState>, url: String, title: String) -> Result<BookmarkEntry, String> {
     BookmarksManager::add_bookmark(&state.db, &url, &title, None)
 }
 
 #[tauri::command]
-fn remove_bookmark(state: State<'_, AppState>, url: String) -> Result<(), String> {
+async fn remove_bookmark(state: State<'_, AppState>, url: String) -> Result<(), String> {
     BookmarksManager::remove_bookmark(&state.db, &url)
 }
 
 #[tauri::command]
-fn is_bookmarked(state: State<'_, AppState>, url: String) -> Result<bool, String> {
+async fn is_bookmarked(state: State<'_, AppState>, url: String) -> Result<bool, String> {
     BookmarksManager::is_bookmarked(&state.db, &url)
 }
 
 #[tauri::command]
-fn get_bookmarks(state: State<'_, AppState>) -> Result<Vec<BookmarkEntry>, String> {
+async fn get_bookmarks(state: State<'_, AppState>) -> Result<Vec<BookmarkEntry>, String> {
     BookmarksManager::get_bookmarks(&state.db)
 }
 
 // --- SETTINGS IPC COMMANDS ---
 
 #[tauri::command]
-fn get_setting(state: State<'_, AppState>, key: String) -> Result<Option<String>, String> {
+async fn get_setting(state: State<'_, AppState>, key: String) -> Result<Option<String>, String> {
     SettingsManager::get_setting(&state.db, &key)
 }
 
 #[tauri::command]
-fn set_setting(state: State<'_, AppState>, key: String, value: String) -> Result<(), String> {
+async fn set_setting(state: State<'_, AppState>, key: String, value: String) -> Result<(), String> {
     SettingsManager::set_setting(&state.db, &key, &value)
 }
 
 #[tauri::command]
-fn get_all_settings(state: State<'_, AppState>) -> Result<HashMap<String, String>, String> {
+async fn get_all_settings(state: State<'_, AppState>) -> Result<HashMap<String, String>, String> {
     SettingsManager::get_all_settings(&state.db)
 }
 
@@ -311,10 +316,11 @@ fn main() {
         ])
         .setup(|app| {
             let main_window = app.get_window("main").expect("failed to get main window");
-            let app_handle = app.handle().clone();
-
-            let state = app.state::<AppState>();
-            let _ = create_tab(app_handle.clone(), state.clone(), Some("https://www.google.com".into()));
+            let app_handle_init = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state_init = app_handle_init.state::<AppState>();
+                let _ = create_tab(app_handle_init.clone(), state_init, Some("https://www.google.com".into())).await;
+            });
 
             let app_handle_events = app.handle().clone();
             let main_window_events = main_window.clone();
