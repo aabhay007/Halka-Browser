@@ -3,6 +3,7 @@ target/
 dist/
 build/
 bin/
+*.zip
 node_modules/
 
 # OS generated files
