@@ -1,4 +1,4 @@
-# Halka Desktop Chromium Browser
+# Halka Browser
 
 A modern, cross-platform desktop web browser shell built around a native Chromium engine runtime.
 Light. Fast. Yours.
