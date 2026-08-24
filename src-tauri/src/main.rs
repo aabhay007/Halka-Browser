@@ -44,6 +44,12 @@ fn emit_tab_state(app: &AppHandle, state: &AppState) {
 // --- TAB COMMANDS ---
 
 #[tauri::command]
+fn get_tabs(state: State<'_, AppState>) -> Result<Vec<TabData>, String> {
+    let mgr = state.tab_manager.lock().unwrap();
+    Ok(mgr.get_tabs_list())
+}
+
+#[tauri::command]
 fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -> Result<TabData, String> {
     let target_url = url.unwrap_or_else(|| "https://www.google.com".to_string());
     let parsed_url = NavigationManager::parse_input_to_url(&target_url);
@@ -282,6 +288,7 @@ fn main() {
     tauri::Builder::default()
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
+            get_tabs,
             create_tab,
             switch_tab,
             close_tab,

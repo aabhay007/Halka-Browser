@@ -13,16 +13,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentTabs = [];
 
+  // Helper to get Tauri invoke function
+  function getInvoke() {
+    if (window.__TAURI__?.core?.invoke) {
+      return window.__TAURI__.core.invoke;
+    }
+    if (window.__TAURI__?.invoke) {
+      return window.__TAURI__.invoke;
+    }
+    return null;
+  }
+
   // Safely invoke Tauri IPC commands
   async function tauriInvoke(cmd, args = {}) {
-    if (window.__TAURI__ && window.__TAURI__.core) {
+    const invoke = getInvoke();
+    if (invoke) {
       try {
-        return await window.__TAURI__.core.invoke(cmd, args);
+        return await invoke(cmd, args);
       } catch (err) {
         console.error(`Tauri IPC Error [${cmd}]:`, err);
       }
     } else {
-      console.log(`[IPC Mock] ${cmd}`, args);
+      console.warn(`[IPC Unavailable] ${cmd}`, args);
     }
   }
 
@@ -175,19 +187,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Listen for Rust events
-  if (window.__TAURI__ && window.__TAURI__.event) {
-    window.__TAURI__.event.listen('tab_state_changed', (event) => {
-      if (event.payload) {
-        renderTabs(event.payload);
-      }
-    });
+  // Setup Tauri Listeners and initial state
+  async function setupTauri() {
+    const listen = window.__TAURI__?.event?.listen;
+    if (listen) {
+      await listen('tab_state_changed', (event) => {
+        if (event.payload) {
+          renderTabs(event.payload);
+        }
+      });
 
-    window.__TAURI__.event.listen('url_changed', (event) => {
-      if (event.payload && typeof event.payload === 'string') {
-        addressInput.value = event.payload;
-        updateBookmarkState(event.payload);
+      await listen('url_changed', (event) => {
+        if (event.payload && typeof event.payload === 'string') {
+          addressInput.value = event.payload;
+          updateBookmarkState(event.payload);
+        }
+      });
+    }
+
+    // Fetch initial tab state
+    const tabs = await tauriInvoke('get_tabs');
+    if (tabs && tabs.length > 0) {
+      renderTabs(tabs);
+    }
+  }
+
+
+  // Initialize
+  if (window.__TAURI__) {
+    setupTauri();
+  } else {
+    // Wait briefly in case __TAURI__ injection is in progress
+    const checkInterval = setInterval(() => {
+      if (window.__TAURI__) {
+        clearInterval(checkInterval);
+        setupTauri();
       }
-    });
+    }, 50);
+    setTimeout(() => clearInterval(checkInterval), 2000);
   }
 });
