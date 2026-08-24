@@ -19,13 +19,19 @@ jobs:
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build Halka Browser (Release)
-        run: cargo build --release --manifest-path src-tauri/Cargo.toml
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Package Windows Binary
+      - name: Build Halka Browser & Installer
+        run: npx @tauri-apps/cli build
+
+      - name: Prepare Release Files
         shell: pwsh
         run: |
           mkdir dist
+          Copy-Item "src-tauri/target/release/bundle/nsis/*.exe" dist/
           Copy-Item src-tauri/target/release/halka_browser.exe dist/
           Compress-Archive -Path dist/* -DestinationPath Halka-Browser-windows-x64.zip
 
@@ -38,5 +44,6 @@ jobs:
           draft: false
           prerelease: false
           files: |
+            src-tauri/target/release/bundle/nsis/*.exe
             Halka-Browser-windows-x64.zip
             src-tauri/target/release/halka_browser.exe
