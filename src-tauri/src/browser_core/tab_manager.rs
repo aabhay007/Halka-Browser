@@ -29,13 +29,15 @@ impl TabManager {
     }
 
     /// Create a new tab record and return its unique tab_id
-    pub fn create_tab(&mut self, url: String) -> (String, TabData) {
+    pub fn create_tab(&mut self, url: String, title: Option<String>) -> (String, TabData) {
         let id = format!("tab_{}", self.next_id);
         self.next_id += 1;
 
+        let tab_title = title.unwrap_or_else(|| "New Tab".to_string());
+
         let tab = TabData {
             id: id.clone(),
-            title: "New Tab".to_string(),
+            title: tab_title,
             url: url.clone(),
             active: true,
         };

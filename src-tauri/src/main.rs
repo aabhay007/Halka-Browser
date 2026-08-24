@@ -53,13 +53,14 @@ async fn get_tabs(state: State<'_, AppState>) -> Result<Vec<TabData>, String> {
 async fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<String>) -> Result<TabData, String> {
     let target_url = url.unwrap_or_else(|| "https://www.google.com".to_string());
     let parsed_url = NavigationManager::parse_input_to_url(&target_url);
+    let initial_title = NavigationManager::extract_display_title(&parsed_url);
 
     let main_window = app.get_window("main").ok_or("main window not found")?;
     let (pos, size) = get_active_content_bounds(&main_window);
 
     let (tab_id, tab_data) = {
         let mut mgr = state.tab_manager.lock().unwrap();
-        mgr.create_tab(parsed_url.clone())
+        mgr.create_tab(parsed_url.clone(), Some(initial_title.clone()))
     };
 
     let existing_tabs = {
@@ -74,8 +75,32 @@ async fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<Stri
         }
     }
 
+    let app_handle_load = app.clone();
+    let tab_id_load = tab_id.clone();
     let initial_url = WebviewUrl::External(parsed_url.parse().map_err(|e| format!("{}", e))?);
-    let webview_builder = WebviewBuilder::new(&tab_id, initial_url).auto_resize();
+    let webview_builder = WebviewBuilder::new(&tab_id, initial_url)
+        .auto_resize()
+        .on_page_load(move |_wv, payload| {
+            if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                let current_url = payload.url().as_str().to_string();
+                let display_title = NavigationManager::extract_display_title(&current_url);
+                let state_ref = app_handle_load.state::<AppState>();
+                {
+                    let mut mgr = state_ref.tab_manager.lock().unwrap();
+                    mgr.update_tab(&tab_id_load, Some(display_title.clone()), Some(current_url.clone()));
+                }
+                let _ = HistoryManager::add_entry(&state_ref.db, &current_url, &display_title);
+                emit_tab_state(&app_handle_load, &state_ref);
+
+                let is_active = {
+                    let mgr = state_ref.tab_manager.lock().unwrap();
+                    mgr.active_tab_id() == Some(tab_id_load.clone())
+                };
+                if is_active {
+                    let _ = app_handle_load.emit("url_changed", current_url);
+                }
+            }
+        });
     let child_wv = main_window
         .add_child(webview_builder, pos, size)
         .map_err(|e| format!("{}", e))?;
@@ -84,7 +109,7 @@ async fn create_tab(app: AppHandle, state: State<'_, AppState>, url: Option<Stri
     let _ = child_wv.set_focus();
 
     // Record history
-    let _ = HistoryManager::add_entry(&state.db, &parsed_url, "");
+    let _ = HistoryManager::add_entry(&state.db, &parsed_url, &initial_title);
 
     emit_tab_state(&app, &state);
     Ok(tab_data)
@@ -169,14 +194,15 @@ async fn navigate(app: AppHandle, state: State<'_, AppState>, input: String) -> 
 
     if let Some(tab_id) = active_id {
         let target_url = NavigationManager::parse_input_to_url(&input);
+        let display_title = NavigationManager::extract_display_title(&target_url);
         if let Some(content_wv) = app.get_webview(&tab_id) {
             if let Ok(parsed_url) = target_url.parse() {
                 let _ = content_wv.navigate(parsed_url);
                 {
                     let mut mgr = state.tab_manager.lock().unwrap();
-                    mgr.update_tab(&tab_id, None, Some(target_url.clone()));
+                    mgr.update_tab(&tab_id, Some(display_title.clone()), Some(target_url.clone()));
                 }
-                let _ = HistoryManager::add_entry(&state.db, &target_url, "");
+                let _ = HistoryManager::add_entry(&state.db, &target_url, &display_title);
                 let _ = app.emit("url_changed", target_url.clone());
                 emit_tab_state(&app, &state);
             }
