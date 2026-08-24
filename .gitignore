@@ -1,0 +1,24 @@
+# Build outputs
+target/
+dist/
+build/
+bin/
+node_modules/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment and databases
+*.sqlite
+*.sqlite3
+*.db
+.env
+*.log
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
