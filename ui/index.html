@@ -80,6 +80,14 @@
       </form>
 
       <div class="right-controls">
+        <!-- AI Preview Toggle Button -->
+        <button id="btn-ai-preview" class="nav-btn ai-toggle-btn" title="AI Preview Mode">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+          <span class="ai-btn-badge">AI</span>
+        </button>
+
         <button id="btn-devtools" class="nav-btn" title="Developer Tools (Ctrl+Shift+I)">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="16 18 22 12 16 6"/>
@@ -90,9 +98,224 @@
     </div>
   </header>
 
-  <!-- Content Area Placeholder (Native Child Webviews mounted at y=80px) -->
-  <main id="content-area">
-  </main>
+  <!-- Layout Body -->
+  <div id="app-layout">
+    <!-- Content Area Placeholder (Native Child Webviews mounted at y=80px) -->
+    <main id="content-area"></main>
+
+    <!-- AI Preview Sidebar (340px width) -->
+    <aside id="ai-sidebar">
+      
+      <!-- VIEW 1: Main AI Preview -->
+      <div id="ai-view-main" class="sidebar-view active">
+        <div class="ai-sidebar-header">
+          <div class="ai-header-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#89b4fa" stroke-width="2">
+              <path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3L12 16.5l-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/>
+            </svg>
+            <span>AI Preview</span>
+            <span class="badge-v1">V1</span>
+          </div>
+          <div class="ai-header-actions">
+            <button id="btn-ai-settings" class="icon-action-btn" title="AI Settings">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+            <button id="btn-ai-close" class="icon-action-btn" title="Close Sidebar">
+              &times;
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-sidebar-scroll">
+          <!-- Section 1: Element Selection -->
+          <div class="ai-section">
+            <div class="section-label">1. SELECT ELEMENT</div>
+            <button id="btn-pick-element" class="ai-primary-btn picker-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="22" y1="12" x2="18" y2="12"></line>
+                <line x1="6" y1="12" x2="2" y2="12"></line>
+                <line x1="12" y1="6" x2="12" y2="2"></line>
+                <line x1="12" y1="22" x2="12" y2="18"></line>
+              </svg>
+              <span id="picker-btn-text">Select Element on Page</span>
+            </button>
+
+            <!-- Selected Element Details Card -->
+            <div id="selected-card" class="element-card empty">
+              <div class="empty-msg">No element selected yet. Click the button above to pick any element on the webpage.</div>
+              <div class="card-content" style="display: none;">
+                <div class="element-badge-row">
+                  <span class="tag-badge" id="el-tag">BUTTON</span>
+                  <span class="id-badge" id="el-id">#checkout-btn</span>
+                </div>
+                <div class="selector-snippet" id="el-selector">button.btn.btn-primary</div>
+                <div class="text-preview" id="el-text">"Checkout"</div>
+                <div class="computed-pills" id="el-pills"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: AI Design Prompt -->
+          <div class="ai-section">
+            <div class="section-label">2. DESCRIBE VISUAL CHANGES</div>
+            <div class="prompt-input-wrapper">
+              <textarea 
+                id="ai-prompt-input" 
+                placeholder="e.g., Make this button modern with 12px rounded corners, subtle drop shadow, and move it 10px to the right..."
+                rows="3"
+              ></textarea>
+            </div>
+
+            <!-- Quick Suggestion Chips -->
+            <div class="chips-container" id="prompt-chips">
+              <button class="chip" data-prompt="Make this button modern with 12px rounded corners and a soft shadow">Modernize Button</button>
+              <button class="chip" data-prompt="Increase padding by 8px and make font weight bolder">Bigger & Bolder</button>
+              <button class="chip" data-prompt="Move this element 14px to the right using transform">Move Right</button>
+              <button class="chip" data-prompt="Add a smooth 2px border with vibrant accent color">Accent Border</button>
+            </div>
+
+            <button id="btn-apply-preview" class="ai-action-btn apply-btn" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+              <span>Apply Preview</span>
+            </button>
+          </div>
+
+          <!-- Section 3: Preview Management & Export -->
+          <div class="ai-section">
+            <div class="section-label">3. PREVIEW & EXPORT</div>
+            
+            <div id="ai-error-banner" class="status-banner error" style="display: none;">
+              <span id="ai-error-text"></span>
+            </div>
+
+            <div id="preview-status-banner" class="status-banner" style="display: none;">
+              <span id="preview-summary-text">Preview active</span>
+            </div>
+
+            <div class="button-grid">
+              <button id="btn-undo-preview" class="secondary-btn" disabled title="Undo last change">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                </svg>
+                Undo
+              </button>
+              <button id="btn-reset-preview" class="secondary-btn danger" disabled title="Restore original webpage">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+                Reset
+              </button>
+            </div>
+
+            <button id="btn-export-prompt" class="export-btn" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>Export Prompt for Cursor / Claude</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: In-Sidebar Settings -->
+      <div id="ai-view-settings" class="sidebar-view" style="display: none;">
+        <div class="ai-sidebar-header">
+          <div class="ai-header-title back-title" id="btn-back-from-settings">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span>AI Settings</span>
+          </div>
+          <div class="ai-header-actions">
+            <button class="icon-action-btn btn-close-any-view" title="Close Sidebar">&times;</button>
+          </div>
+        </div>
+
+        <div class="ai-sidebar-scroll">
+          <div class="ai-section form-body">
+            <div class="form-group">
+              <label for="setting-provider">AI Provider</label>
+              <select id="setting-provider" class="form-input">
+                <option value="groq" selected>Groq (Ultra-fast LLM API)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="setting-model">Model</label>
+              <select id="setting-model" class="form-input">
+                <option value="openai/gpt-oss-120b" selected>openai/gpt-oss-120b (Recommended - High Quality)</option>
+                <option value="qwen/qwen3.8-27b">qwen/qwen3.8-27b (Strong Coding - 2M tokens/day)</option>
+                <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (Fast & Lightweight)</option>
+                <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b</option>
+                <option value="groq/compound">groq/compound</option>
+                <option value="groq/compound-mini">groq/compound-mini</option>
+                <option value="allam-2-7b">allam-2-7b</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="setting-api-key">Groq API Key</label>
+              <div class="api-key-input-row">
+                <input type="password" id="setting-api-key" class="form-input" placeholder="gsk_..." autocomplete="off">
+                <button type="button" id="btn-toggle-key-visibility" class="key-toggle-btn" title="Toggle visibility">👁</button>
+              </div>
+              <small class="form-help">Stored locally in your browser's SQLite database. Never hardcoded or committed.</small>
+            </div>
+
+            <div id="settings-save-feedback" class="status-banner" style="display: none;">
+              <span>Settings saved successfully!</span>
+            </div>
+
+            <button id="btn-save-settings" class="ai-primary-btn">
+              <span>Save & Apply Settings</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: In-Sidebar Export Prompt -->
+      <div id="ai-view-export" class="sidebar-view" style="display: none;">
+        <div class="ai-sidebar-header">
+          <div class="ai-header-title back-title" id="btn-back-from-export">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span>Export Prompt</span>
+          </div>
+          <div class="ai-header-actions">
+            <button class="icon-action-btn btn-close-any-view" title="Close Sidebar">&times;</button>
+          </div>
+        </div>
+
+        <div class="ai-sidebar-scroll">
+          <div class="ai-section">
+            <p class="modal-hint">Paste this prompt directly into Cursor, Claude Code, or Gemini to apply these changes in code:</p>
+            <textarea id="export-prompt-text" class="export-textarea" readonly rows="14"></textarea>
+            
+            <button id="btn-copy-prompt" class="ai-primary-btn copy-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="copy-btn-text">Copy Prompt</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
 
   <script src="js/chrome.js"></script>
 </body>
